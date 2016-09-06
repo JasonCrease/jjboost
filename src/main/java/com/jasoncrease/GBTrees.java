@@ -21,7 +21,7 @@ public class GBTrees {
     double[] _treeWeights;
 
     private GBTrees() {
-        _treeFinder = new TreeFinder(new Entropy());
+        _treeFinder = new TreeFinder(new Splitter());
         _trees = new TreeNode[_maxTrees];
         _treeWeights = new double[_maxTrees];
     }

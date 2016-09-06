@@ -8,21 +8,14 @@ public class TreeNode {
     public int _splitIndex = -1;
     // The value at which we split. < than this go left. >= go right
     public double _splitValue = 0f;
-    // Size of class 0
-    public int _class0Size;
-    // Size of class 1
-    public int _class1Size;
     // True iff this is a leaf node
     public boolean _isLeaf;
-
-    public TreeNode()
-    {
-
-    }
+    // If this is a leaf node, then this is the mean of the values seen here
+    public double _value;
 
     public double predict(double[] xs) {
         if(_isLeaf)
-            return (double)_class1Size / (double)(_class0Size + _class1Size);
+            return _value;
         else
             if(xs[_splitIndex] < _splitValue)
                 return _left.predict(xs);

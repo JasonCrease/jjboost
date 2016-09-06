@@ -1,14 +1,12 @@
 package com.jasoncrease;
 
-import javafx.util.Pair;
-
 import java.util.Arrays;
 import java.util.Comparator;
 
 /**
  * Created by jason on 28/08/2016.
  */
-public class Entropy implements IEntropy {
+public class Splitter implements ISplitter {
 
     @Override
     public SplitInfo getBestSplit(double[][] xs, double[] ys) {
@@ -17,7 +15,7 @@ public class Entropy implements IEntropy {
         SplitInfo bestSplit = splits[0];
 
         for (int i = 1; i < splits.length; i++)
-            if(bestSplit == null || (splits[i] != null && splits[i]._gain > bestSplit._gain))
+            if(bestSplit == null || (splits[i] != null && splits[i]._deviance < bestSplit._deviance))
                 bestSplit = splits[i];
 
         return bestSplit;
@@ -28,90 +26,68 @@ public class Entropy implements IEntropy {
         int numCols = xs.length;
         int numRows = xs[0].length;
 
-        // Old implemementation. To return to.
-//        // References into the original arrays so we can find which indexes those numbers originally referred to
-//        int[][] indexReferences = new int[numCols][numRows];
-//        // Fill index-arrays with starting numbers
-//        for (int row = 0; row < numRows; row++)
-//            indexReferences[0][row] = row;
-//        for (int col = 1; col < numCols; col++)
-//            indexReferences[col] = indexReferences[0].clone();
-//        // Sort the arrays
-//        for (int col = 0; col < numCols; col++)
-//            Arrays.sort(indexReferences[col], new OtherArrayComparator(xsSorted[col]));
-
         // Fill entry arrays
         Entry[][] es = new Entry[numCols][numRows];
         for (int col = 0; col < numCols; col++)
             for (int row = 0; row < numRows; row++)
                 es[col][row] = new Entry(row, xs[col][row]);
 
-
         // Sort them
         for (int col = 0; col < numCols; col++)
             Arrays.sort(es[col], new EntryComparator());
-
 
         // Find best split point
         SplitInfo[] bestSplits = new SplitInfo[numCols];
 
         for (int col = 0; col < numCols; col++) {
 
-            int fps = 0;
-            int fns = 0;
-            int tps = 0;
-            int tns = 0;
+            double leftSumY = 0;
+            double leftSumYSq = 0;
+            double rightSumY = 0;
+            double rightSumYSq = 0;
 
             // Calculate totals if everything is classified as 1
             for (int row = 0; row < numRows; row++) {
                 int index = es[col][row]._pos;
                 double y = ys[index];
 
-                if (y > 0.5)
-                    tps++;
-                else
-                    fps++;
+                rightSumY   += y;
+                rightSumYSq += y * y;
             }
 
-            double initialEntropy = entropy(tps, fps);
+            double deviance = sumDeviance(leftSumY, leftSumYSq, rightSumY, rightSumYSq, 0, numRows);
             SplitInfo bestSplitSoFar = null;
 
 
             // Move decision point, recalculating entropy as we go
             // Intialize previousX to the 0th X value
             double previousX = xs[col][es[col][0]._pos];
-            double bestGainSoFar = 0;
+            double bestDevianceSoFar = deviance;
 
+            // Note here that the split is at this row, but divides everything to the left
             for (int row = 0; row < numRows; row++) {
+                int leftRows = row;
+                int rightRows = numRows - row;
+
                 int index = es[col][row]._pos;
                 double y = ys[index];
                 double x = xs[col][index];
 
-                if (y < 0.5) // false-positive is now a true-negative
-                {
-                    fps--;
-                    tns++;
-                } else       // true-positive is now a false-negative
-                {
-                    tps--;
-                    fns++;
-                }
-
-                double gain = initialEntropy - (entropy(tns, fns) * row  +  entropy(tps, fps) * (numRows - row)) / numRows;
+                deviance = sumDeviance(leftSumY, leftSumYSq, rightSumY, rightSumYSq, leftRows, rightRows);
 
                 // Note that the x != previousX condition is always true for the 0th row
-                if (gain > bestGainSoFar && x != previousX)
+                if (deviance < bestDevianceSoFar && x != previousX)
                 {
-                    int leftRows = row;
-                    int rightRows = numRows - row;
-                    bestGainSoFar = gain;
-                    double leftPurity  = (double)tns / leftRows;
-                    double rightPurity = (double)tps / rightRows;
-
-                    bestSplitSoFar = new SplitInfo(gain, es[col][row]._val, col, leftPurity, rightPurity, leftRows, rightRows);
+                    bestDevianceSoFar = deviance;
+                    bestSplitSoFar = new SplitInfo(deviance, es[col][row]._val, col, leftSumY / leftRows, rightSumY / rightRows, leftRows, rightRows);
                 }
 
                 previousX = x;
+
+                leftSumY    += y;
+                leftSumYSq  += y*y;
+                rightSumY   -= y;
+                rightSumYSq -= y*y;
             }
 
             bestSplits[col] = bestSplitSoFar;
@@ -122,6 +98,16 @@ public class Entropy implements IEntropy {
         return bestSplits;
     }
 
+    private double sumDeviance(double leftSumY, double leftSumYSq, double rightSumY, double rightSumYSq, int leftRows, int rightRows) {
+        double a = 0;
+        if(leftRows > 0)
+            a = (leftSumYSq  - ((leftSumY * leftSumY) / leftRows)) / leftRows;
+        double b = 0;
+        if(rightRows > 0)
+            b = (rightSumYSq - ((rightSumY * rightSumY) / rightRows)) / rightRows;
+
+        return a + b;
+    }
 
 
     private double entropy(int a, int b) {

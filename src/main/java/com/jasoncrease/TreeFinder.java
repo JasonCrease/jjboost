@@ -2,9 +2,9 @@ package com.jasoncrease;
 
 public class TreeFinder implements ITreeFinder {
 
-    IEntropy _entropy;
+    ISplitter _entropy;
 
-    public TreeFinder(IEntropy entropy)
+    public TreeFinder(ISplitter entropy)
     {
         _entropy = entropy;
     }
@@ -15,13 +15,11 @@ public class TreeFinder implements ITreeFinder {
 
         // If we're really deep, make this a leaf node
         if(depth == 0) {
+            double sum = 0;
+            for(double y : ys)
+                sum += y;
+            retNode._value = sum / (double)ys.length;
             retNode._isLeaf = true;
-            for(double y : ys) {
-                if(y < 0.5)
-                    retNode._class0Size++;
-                else
-                    retNode._class1Size++;
-            }
 
             return retNode;
         }
@@ -29,14 +27,12 @@ public class TreeFinder implements ITreeFinder {
         SplitInfo bestSplit = _entropy.getBestSplit(xs, ys);
 
         // There is no possible split, or the gain is too poor. Make this a leaf
-        if(bestSplit == null || bestSplit._gain < 0.0001) {
+        if(bestSplit == null) {
+            double sum = 0;
+            for(double y : ys)
+                sum += y;
+            retNode._value = sum / (double)ys.length;
             retNode._isLeaf = true;
-            for(double y : ys) {
-                if(y < 0.5)
-                    retNode._class0Size++;
-                else
-                    retNode._class1Size++;
-            }
 
             return retNode;
         }

@@ -1,15 +1,12 @@
 import com.jasoncrease.*;
-import javafx.util.Pair;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class EntropyGainTests {
@@ -19,7 +16,8 @@ public class EntropyGainTests {
         double[] ys = new double[]       { 1, 1, 1, 0, 1, 1, 0, 0, 1};
         double[][] xs = new double[][] { { 2, 2, 2, 2, 2, 2, 2, 2, 2 } };
 
-        SplitInfo[] splits = new Entropy().getSplits(xs, ys);
+        SplitInfo[] splits = new Splitter().getSplits(xs, ys);
+        Assert.assertNull(splits[0]);
     }
 
     @Test
@@ -27,7 +25,16 @@ public class EntropyGainTests {
         double[] ys = new double[]       { 1, 1, 1, 0, 1, 1, 0, 0, 1};
         double[][] xs = new double[][] { { 2, 2, 2, 2, 3, 3, 3, 3, 3 } };
 
-        SplitInfo[] splits = new Entropy().getSplits(xs, ys);
+        SplitInfo[] splits = new Splitter().getSplits(xs, ys);
+    }
+
+    @Test
+    public void splitAt6() throws IOException {
+        double[] ys = new double[]       { 0, 0, 0, 0, 0,  1, 1, 1, 1 };
+        double[][] xs = new double[][] { { 2, 3, 1, 1, 5,  7, 6, 9, 8 } };
+
+        SplitInfo[] splits = new Splitter().getSplits(xs, ys);
+
     }
 
     @Test
@@ -35,7 +42,7 @@ public class EntropyGainTests {
         double[] ys = new double[]       { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
         double[][] xs = new double[][] { { 2, 2, 1, 1, 3, 3, 3, 4, 4 } };
 
-        SplitInfo[] splits = new Entropy().getSplits(xs, ys);
+        SplitInfo[] splits = new Splitter().getSplits(xs, ys);
     }
 
     @Test
@@ -43,7 +50,7 @@ public class EntropyGainTests {
         double[] ys = new double[]       { 1 };
         double[][] xs = new double[][] { { 2  } };
 
-        SplitInfo[] splits = new Entropy().getSplits(xs, ys);
+        SplitInfo[] splits = new Splitter().getSplits(xs, ys);
     }
 
     @Test
@@ -52,7 +59,7 @@ public class EntropyGainTests {
         double[][] xs = getIrisData()._xs;
         String[] headers = getIrisData()._headers;
 
-        IEntropy entropy = new Entropy();
+        ISplitter entropy = new Splitter();
 
         SplitInfo[] splits = entropy.getSplits(xs, ys);
 
@@ -60,7 +67,7 @@ public class EntropyGainTests {
         for(int i=0; i < splits.length; i++)
         {
             System.out.println(String.format("%13s  %.5f  %.5f",
-                    headers[i], splits[i]._gain, splits[i]._value
+                    headers[i], splits[i]._deviance, splits[i]._value
             ));
         }
     }
@@ -70,14 +77,14 @@ public class EntropyGainTests {
         double[]   ys = getIrisData()._ys;
         double[][] xs = getIrisData()._xs;
 
-        SplitInfo split = new Entropy().getBestSplit(xs, ys);
+        SplitInfo split = new Splitter().getBestSplit(xs, ys);
 
         Assert.assertEquals(3, split._col, 3);
         Assert.assertEquals(1.8, split._value, 1E-6);
         Assert.assertEquals(104, split._leftSize);
-        Assert.assertEquals(0.96154, split._leftPurity, 1E-4);
+        Assert.assertEquals(0.96154, split._leftMean, 1E-4);
         Assert.assertEquals(46, split._rightSize);
-        Assert.assertEquals(0.97826, split._rightPurity, 1E-4);
+        Assert.assertEquals(0.97826, split._rightMean, 1E-4);
     }
 
     class IrisData
