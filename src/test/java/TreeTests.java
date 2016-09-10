@@ -15,41 +15,40 @@ public class TreeTests {
 
         double lastLoss = 12000f;
 
-        for(int depth = 0; depth < 25; depth++) {
+        for (int depth = 0; depth < 25; depth++) {
             TreeNode bestTree = treeFinder.getBestTree(xs, ys, depth);
 
-              double totalLoss = 0;
-//
-//            for (int row = 0; row < xs[0].length; row++) {
-//
-//                double[] predX = new double[18];
-//
-//                for(int col =0; col<18; col++)
-//                    predX[col] = xs[col][row];
-//
-//                double y = bestTree.predict(predX);
-//                totalLoss += boundaryLoss(y, ys[row]);
-//            }
-//
-              System.out.println(totalLoss);
+            double totalLoss = 0;
 
-              Assert.assertTrue("totalLoss not <= lastLoss", totalLoss <= lastLoss);
-              lastLoss = totalLoss;
+            for (int row = 0; row < xs[0].length; row++) {
+
+                double[] predX = new double[18];
+
+                for (int col = 0; col < 18; col++)
+                    predX[col] = xs[col][row];
+
+                double y = bestTree.predict(predX);
+                totalLoss += boundaryLoss(y, ys[row]);
+            }
+
+            System.out.println(totalLoss);
+
+            Assert.assertTrue("totalLoss not <= lastLoss", totalLoss <= lastLoss);
+            lastLoss = totalLoss;
         }
     }
 
     @Test
-    public void onAllIrisTestIsPerfectAtDepth4() throws IOException {
+    public void onAllIrisTestIsPerfectAtDepth3() throws IOException {
         double[] ys = DataSets.getIrisData()._ys;
         double[][] xs = DataSets.getIrisData()._xs;
 
         ITreeFinder treeFinder = new TreeFinder(new Splitter());
         TreeNode bestTree = treeFinder.getBestTree(xs, ys, 3);
 
-        for(int i=0; i< xs[0].length; i++)
-        {
-            double[] predX = new double[] {xs[0][i], xs[1][i], xs[2][i], xs[3][i] };
-            double y =  bestTree.predict(predX);
+        for (int i = 0; i < xs[0].length; i++) {
+            double[] predX = new double[]{xs[0][i], xs[1][i], xs[2][i], xs[3][i]};
+            double y = bestTree.predict(predX);
             //Assert.assertEquals(y, ys[i], 1E-5);
             System.out.println(String.format("%d: Predicted: %f Actual: %f", i, y, ys[i]));
         }
@@ -64,7 +63,7 @@ public class TreeTests {
 
         double lastLoss = 10000000000f;
 
-        for(int depth = 0; depth < 25; depth++) {
+        for (int depth = 0; depth < 15; depth++) {
             TreeNode bestTree = treeFinder.getBestTree(xs, ys, depth);
 
             double totalLoss = 0;
@@ -92,17 +91,16 @@ public class TreeTests {
         if (y1 < 1e-15)
             y1 = 1e-15;
 
-        return - (y1 * Math.log(y2) + (1 - y1) * Math.log(1 - y2));
+        return -(y1 * Math.log(y2) + (1 - y1) * Math.log(1 - y2));
     }
 
     private static double boundaryLoss(double y1, double y2) {
-        if(y1 > 0.5 && y2 > 0.5)
+        if (y1 > 0.5 && y2 > 0.5)
             return 0f;
-        if(y1 < 0.5 && y2 < 0.5)
+        if (y1 < 0.5 && y2 < 0.5)
             return 0f;
         return 1f;
     }
-
 
 
     private void AssertRoughlyTheSame(double d1, double d2) {
@@ -113,7 +111,6 @@ public class TreeTests {
         if (d1 > d2 + epsilon)
             throw new AssertionError(String.format("d1 > d2. Expected %f got %f", d1, d2));
     }
-
 
 
 }
