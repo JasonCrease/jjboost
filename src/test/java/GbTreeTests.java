@@ -36,20 +36,4 @@ public class GbTreeTests {
         gbTrees.train(dataXs, dataYs);
     }
 
-    @Test
-    public void Test2() throws Exception {
-        int numCols = 5;
-        int numRows = 1000;
-
-        double[][] dataXs = DataSets.getRandomXs(numCols, numRows);
-        double[]   dataYs = DataSets.getRandomYs(numRows);
-
-        double[] predVector = new double[numCols];
-        for(int col = 0; col < numCols; col++)
-            predVector[col] = random.nextDouble() * 200;
-
-        GBTrees gbTrees = (new GBTrees.GBTreesBuilder()).setMaxTrees(10).build();
-        gbTrees.train(dataXs, dataYs);
-        gbTrees.predict(predVector);
-    }
 }
