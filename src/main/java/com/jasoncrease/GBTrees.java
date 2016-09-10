@@ -12,7 +12,7 @@ public class GBTrees {
     // The maximum permitted depth of tree
     int _maxDepth = 3;
     // How much to multiply gamma (tree weight) by
-    double _shrinkage = 1.0;
+    double _shrinkage = 1;
     //
     boolean showDebug = false;
 
@@ -20,7 +20,11 @@ public class GBTrees {
     TreeNode[] _trees;
     double[] _treeWeights;
 
-    private GBTrees() {
+
+    public GBTrees(GBTreesBuilder gbTreesBuilder) {
+        _maxTrees = gbTreesBuilder._maxTrees;
+        _maxDepth = gbTreesBuilder._maxTreesDepth;
+
         _treeFinder = new TreeFinder(new Splitter());
         _trees = new TreeNode[_maxTrees];
         _treeWeights = new double[_maxTrees];
@@ -69,7 +73,8 @@ public class GBTrees {
             for (int row = 0; row < numRows; row++)
                 predictions[row] = predict(transXs[row]);
             // 3. Do a linear search to get a gamma that best matches the residuals
-            double gamma = getBestFactor(ys, residualYs, resEffects);
+            //double gamma = getBestFactor(ys, predictions, resEffects);
+            double gamma = 1;
 
             // Update residuals
             for (int row = 0; row < numRows; row++)
@@ -97,9 +102,9 @@ public class GBTrees {
         double bestK = 0f;
         double bestLoss = Double.MAX_VALUE;
         double[] currentYds = yds.clone();
-        double Kdiff = 0.01;
+        double Kdiff = 0.1;
 
-        for (double K = -1; K < 1; K += Kdiff) {
+        for (double K = -2; K < 2; K += Kdiff) {
 
             for (int i = 0; i < yds.length; i++)
                 currentYds[i] = yds[i] + (K * fs[i]);
@@ -128,8 +133,13 @@ public class GBTrees {
     private static double loss(double[] y1, double[] y2) {
         double totalLoss = 0f;
         for (int i = 0; i < y1.length; i++)
-            totalLoss += logloss(y1[i], y2[i]);
+            totalLoss += -squaredloss(y1[i], y2[i]);
+            ///totalLoss += logloss(y1[i], y2[i]);
         return -totalLoss;
+    }
+
+    private static double squaredloss(double v1, double v2) {
+        return (v1 - v2) * (v1 - v2);
     }
 
     public double predict(double[] vector) throws Exception {
@@ -141,7 +151,7 @@ public class GBTrees {
         for (int i = 0; i < _numTrees; i++)
             prediction += _trees[i].predict(vector) * _treeWeights[i];
 
-        return prediction / _numTrees;
+        return prediction; // / _numTrees;
     }
 
     // http://stackoverflow.com/questions/8422374/java-multi-dimensional-array-transposing
@@ -160,8 +170,22 @@ public class GBTrees {
     }
 
     public static class GBTreesBuilder {
+        int _maxTrees = 3;
+        private int _maxTreesDepth;
+
+        public GBTreesBuilder setMaxTrees(int maxTrees)
+        {
+            _maxTrees = maxTrees;
+            return this;
+        }
+
+        public GBTreesBuilder setMaxTreeDepth(int maxTreeDepth) {
+            this._maxTreesDepth = maxTreeDepth;
+            return this;
+        }
+
         public GBTrees build() {
-            return new GBTrees();
+            return new GBTrees(this);
         }
     }
 }
