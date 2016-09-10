@@ -55,14 +55,11 @@ public class Splitter implements ISplitter {
                 rightSumYSq += y * y;
             }
 
-            double deviance = sumDeviance(leftSumY, leftSumYSq, rightSumY, rightSumYSq, 0, numRows);
-            SplitInfo bestSplitSoFar = null;
-
-
             // Move decision point, recalculating entropy as we go
             // Intialize previousX to the 0th X value
             double previousX = xs[col][es[col][0]._pos];
-            double bestDevianceSoFar = deviance;
+            SplitInfo bestSplitSoFar = null;
+            double bestDevianceSoFar = sumDeviance(0, 0, rightSumY, rightSumYSq, 0, numRows);
 
             // Note here that the split is at this row, but divides everything to the left
             for (int row = 0; row < numRows; row++) {
@@ -73,7 +70,7 @@ public class Splitter implements ISplitter {
                 double y = ys[index];
                 double x = xs[col][index];
 
-                deviance = sumDeviance(leftSumY, leftSumYSq, rightSumY, rightSumYSq, leftRows, rightRows);
+                double deviance = sumDeviance(leftSumY, leftSumYSq, rightSumY, rightSumYSq, leftRows, rightRows);
 
                 // Note that the x != previousX condition is always true for the 0th row
                 if (deviance < bestDevianceSoFar && x != previousX)
@@ -101,10 +98,10 @@ public class Splitter implements ISplitter {
     private double sumDeviance(double leftSumY, double leftSumYSq, double rightSumY, double rightSumYSq, int leftRows, int rightRows) {
         double a = 0;
         if(leftRows > 0)
-            a = (leftSumYSq  - ((leftSumY * leftSumY) / leftRows)) / leftRows;
+            a = leftSumYSq  - ((leftSumY * leftSumY) / leftRows );
         double b = 0;
         if(rightRows > 0)
-            b = (rightSumYSq - ((rightSumY * rightSumY) / rightRows)) / rightRows;
+            b = rightSumYSq - ((rightSumY * rightSumY) / rightRows);
 
         return a + b;
     }
