@@ -9,15 +9,15 @@ import java.io.IOException;
  */
 public class CrossValidatorTests {
     @Test
-    public void Test1() throws IOException {
+    public void Test1() throws Exception {
 
-        double[][] xs = DataSets.getIrisData()._xs;
-        double[]   ys = DataSets.getIrisData()._ys;
+        double[][] xs = DataSets.getHousePriceData()._xs;
+        double[]   ys = DataSets.getHousePriceData()._ys;
 
-        GBTrees.GBTreesBuilder gbTreesBuilder = new GBTrees.GBTreesBuilder().setMaxTrees(50).setMaxTreeDepth(6);
+        GBTrees.GBTreesBuilder gbTreesBuilder = new GBTrees.GBTreesBuilder().setMaxTrees(550).setMaxTreeDepth(7);
 
         CrossValidator.CrossValidatorBuilder crossValidatorBuilder = (new CrossValidator.CrossValidatorBuilder())
-                .setFolds(4)
+                .setFolds(3)
                 .setTreeBuilder(gbTreesBuilder)
                 .setXs(xs)
                 .setYs(ys);
