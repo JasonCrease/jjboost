@@ -57,7 +57,7 @@ public class GBTrees {
         for (int row = 0; row < numRows; row++)
             residualYs[row] = ys[row] - _trees[0].predict(transXs[row]);
 
-        LOGGER.trace(String.format("Test error %.6f", rms(residualYs)));
+        LOGGER.trace(String.format("Train error %.6f", rms(residualYs)));
 
 
 
@@ -73,8 +73,8 @@ public class GBTrees {
             for (int row = 0; row < numRows; row++)
                 predictions[row] = predict(transXs[row]);
             // 3. Do a linear search to get a gamma that best matches the residuals
-            //double gamma = getBestFactor(ys, predictions, resEffects);
-            double gamma = 1;
+            double gamma = getBestFactor(ys, predictions, resEffects);
+            //double gamma = 1;
 
             // Update residuals
             for (int row = 0; row < numRows; row++)
@@ -84,7 +84,7 @@ public class GBTrees {
             _treeWeights[treeNum] = gamma * _shrinkage;
             _numTrees++;
 
-            LOGGER.trace(String.format("Test error %.6f", rms(residualYs)));
+            LOGGER.trace(String.format("Train error %.6f", rms(residualYs)));
         }
     }
 
@@ -142,16 +142,32 @@ public class GBTrees {
         return (v1 - v2) * (v1 - v2);
     }
 
-    public double predict(double[] vector) throws Exception {
+    public double[] predict(double[][] dataXs) throws RuntimeException {
+        int cols = dataXs.length;
+        int rows = dataXs[0].length;
+        double[] preds = new double[rows];
+
+        for (int row = 0; row < rows; row++) {
+            double[] vector = new double[cols];
+            for (int col = 0; col < cols; col++)
+                vector[col] = dataXs[col][row];
+
+            preds[row] = predict(vector);
+        }
+
+        return preds;
+    }
+
+    public double predict(double[] vector) throws RuntimeException {
         if(_numTrees == 0)
-            throw new Exception("No tree grown yet. Train me first.");
+            throw new RuntimeException("No tree grown yet. Train me first.");
 
         double prediction = 0f;
 
         for (int i = 0; i < _numTrees; i++)
             prediction += _trees[i].predict(vector) * _treeWeights[i];
 
-        return prediction; // / _numTrees;
+        return prediction;
     }
 
     // http://stackoverflow.com/questions/8422374/java-multi-dimensional-array-transposing
@@ -168,6 +184,7 @@ public class GBTrees {
         }
         return array_new;
     }
+
 
     public static class GBTreesBuilder {
         int _maxTrees = 3;
