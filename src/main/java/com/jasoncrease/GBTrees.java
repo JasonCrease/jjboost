@@ -12,7 +12,7 @@ public class GBTrees {
     // The maximum permitted depth of tree
     int _maxDepth = 3;
     // How much to multiply gamma (tree weight) by
-    double _shrinkage = 1;
+    double _shrinkage = 0.1;
     //
     boolean showDebug = false;
 
@@ -31,6 +31,10 @@ public class GBTrees {
     }
 
     public void train(double[][] xs, double[] ys) throws Exception {
+        train(xs, ys, null, null);
+    }
+
+    public void train(double[][] xs, double[] ys, double[][] testXs, double[] testYs) throws Exception {
         if (xs.length == 0)
             throw new Exception("There are no features");
         if (xs[0].length != ys.length)
@@ -40,11 +44,18 @@ public class GBTrees {
         int numFeatures = xs.length;
 
         LOGGER.info(String.format("Training on %d rows and %d features.", numRows, numFeatures));
+        if(testXs != null)
+            LOGGER.info(String.format("Testing on %d rows and %d features.", testXs[0].length, testXs.length));
 
         double[] residualYs = new double[numRows];
         double[] resEffects = new double[numRows];
         double[] predictions = new double[numRows];
         double[][] transXs = transposeArray(xs); // The transpose if useful for some operations
+
+        double[][] transTestXs = null;
+        if(testXs != null)
+            transTestXs = transposeArray(testXs);
+
 
         // Initialise residuals to the ys
         for (int i = 0; i < numRows; i++)
@@ -57,7 +68,14 @@ public class GBTrees {
         for (int row = 0; row < numRows; row++)
             residualYs[row] = ys[row] - _trees[0].predict(transXs[row]);
 
-        LOGGER.trace(String.format("Train error %.6f", rms(residualYs)));
+
+        if(transTestXs == null)
+            LOGGER.trace(String.format("%d trees. Train error %.6f", _numTrees, rms(residualYs)));
+        else
+        {
+            double[] yPreds = predict(testXs);
+            LOGGER.trace(String.format("%d trees. Train error %.6f. Test error %.6f", _numTrees, rms(residualYs), loss(yPreds, testYs)));
+        }
 
 
 
@@ -73,8 +91,8 @@ public class GBTrees {
             for (int row = 0; row < numRows; row++)
                 predictions[row] = predict(transXs[row]);
             // 3. Do a linear search to get a gamma that best matches the residuals
-            double gamma = getBestFactor(ys, predictions, resEffects);
-            //double gamma = 1;
+            //double gamma = getBestFactor(ys, predictions, resEffects);
+            double gamma = 1;
 
             // Update residuals
             for (int row = 0; row < numRows; row++)
@@ -84,7 +102,18 @@ public class GBTrees {
             _treeWeights[treeNum] = gamma * _shrinkage;
             _numTrees++;
 
-            LOGGER.trace(String.format("Train error %.6f", rms(residualYs)));
+
+            if(transTestXs == null)
+                LOGGER.trace(String.format("Trees %d. Train error %.6f", _numTrees, rms(residualYs) / numRows));
+            else
+            {
+                double[] yTrainPreds = predict(xs);
+                double[] yTestPreds  = predict(testXs);
+                LOGGER.trace(String.format("Trees %d. Train error %.6f. Test error %.6f",
+                        _numTrees,
+                        loss(yTrainPreds, ys) / numRows,
+                        loss(yTestPreds , testYs) / testXs[0].length ));
+            }
         }
     }
 
@@ -125,6 +154,10 @@ public class GBTrees {
             y2 = 1 - 1e-15;
         if (y2 < 1e-15)
             y2 = 1e-15;
+        if (y1 >= 1 - 1e-15)
+            y1 = 1 - 1e-15;
+        if (y1 < 1e-15)
+            y1 = 1e-15;
 
         return y1 * Math.log(y2) +
                 (1 - y1) * Math.log(1 - y2);
@@ -133,8 +166,8 @@ public class GBTrees {
     private static double loss(double[] y1, double[] y2) {
         double totalLoss = 0f;
         for (int i = 0; i < y1.length; i++)
-            totalLoss += -squaredloss(y1[i], y2[i]);
-            ///totalLoss += logloss(y1[i], y2[i]);
+            //totalLoss += -squaredloss(y1[i], y2[i]);
+            totalLoss += logloss(y1[i], y2[i]);
         return -totalLoss;
     }
 
