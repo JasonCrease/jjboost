@@ -1,6 +1,7 @@
 package com.jasoncrease.validation;
 
 import com.jasoncrease.GBTrees;
+import com.sun.xml.internal.ws.developer.MemberSubmissionAddressing;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -31,10 +32,27 @@ public class CrossValidator {
         double[]   ysTest;
     }
 
-    public void run()
-    {
+    public void run() throws Exception {
         TestTrainSet[] testTrainSets = buildTestTrainSets();
-        
+
+        GBTrees[] gbTrees = new GBTrees[_folds];
+        Performance[] perfs = new Performance[_folds];
+
+        double totalAucRoc = 0f;
+
+        for (int i = 0; i < _folds; i++) {
+            gbTrees[i] = _gbBuilder.build();
+            gbTrees[i].train(testTrainSets[i].xsTrain,
+                    testTrainSets[i].ysTrain,
+                    testTrainSets[i].xsTest,
+                    testTrainSets[i].ysTest);
+
+            double[] yPreds = gbTrees[i].predict(testTrainSets[i].xsTest);
+            perfs[i] = Performance.build(yPreds, testTrainSets[i].ysTest);
+            totalAucRoc += perfs[i].getAucroc();
+        }
+
+        totalAucRoc /= _folds;
     }
 
     private TestTrainSet[] buildTestTrainSets() {
@@ -46,8 +64,10 @@ public class CrossValidator {
         TestTrainSet[] testTrainSets = new TestTrainSet[_folds];
 
         for (int i = 0; i < _folds; i++) {
+            // This awkwardness is necessary to include all the rows precisely once amongst the test sets.
             int foldTestSize = ((numRows - i - 1) / _folds) + 1;
             int foldTrainSize = numRows - foldTestSize;
+
             testTrainSets[i] = new TestTrainSet();
             testTrainSets[i].xsTest = new double[numCols][foldTestSize];
             testTrainSets[i].xsTrain = new double[numCols][foldTrainSize];
@@ -108,12 +128,14 @@ public class CrossValidator {
             _xs = xs;
             return this;
         }
-        public CrossValidatorBuilder setYs(double[] ys)
-        {
+        public CrossValidatorBuilder setYs(double[] ys) {
             _ys = ys;
             return this;
         }
+
         public CrossValidatorBuilder setFolds(int folds) {
+            if (folds < 1)
+                throw new IllegalArgumentException("folds must be > 0");
             this._folds = folds;
             return this;
         }
