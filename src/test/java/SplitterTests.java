@@ -71,9 +71,7 @@ public class SplitterTests {
         double[][] xs = getIrisData()._xs;
         String[] headers = getIrisData()._headers;
 
-        ISplitter entropy = new Splitter();
-
-        SplitInfo[] splits = entropy.getSplits(xs, ys);
+        SplitInfo[] splits = new Splitter().getSplits(xs, ys);
 
         System.out.println("Feature        Deviance   Split value");
         for(int i=0; i < splits.length; i++)

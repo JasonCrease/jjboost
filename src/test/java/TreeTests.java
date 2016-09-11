@@ -49,7 +49,7 @@ public class TreeTests {
         for (int i = 0; i < xs[0].length; i++) {
             double[] predX = new double[]{xs[0][i], xs[1][i], xs[2][i], xs[3][i]};
             double y = bestTree.predict(predX);
-            //Assert.assertEquals(y, ys[i], 1E-5);
+            Assert.assertEquals(y, ys[i], 1E-5);
             System.out.println(String.format("%d: Predicted: %f Actual: %f", i, y, ys[i]));
         }
     }
@@ -76,7 +76,7 @@ public class TreeTests {
 
             System.out.println(totalLoss);
 
-            //Assert.assertTrue("totalLoss not <= lastLoss", totalLoss <= lastLoss);
+            Assert.assertTrue("totalLoss not <= lastLoss", totalLoss <= lastLoss);
             lastLoss = totalLoss;
         }
     }

@@ -1,4 +1,6 @@
 import com.jasoncrease.GBTrees;
+import com.jasoncrease.validation.Performance;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Random;
@@ -23,8 +25,12 @@ public class GbTreeTests {
         double[][] dataXs = DataSets.getHousePriceData()._xs;
         double[]   dataYs = DataSets.getHousePriceData()._ys;
 
-        GBTrees gbTrees = (new GBTrees.GBTreesBuilder()).setMaxTrees(50).setMaxTreeDepth(3).build();
+        GBTrees gbTrees = (new GBTrees.GBTreesBuilder()).setMaxTrees(20).setMaxTreeDepth(3).build();
         gbTrees.train(dataXs, dataYs);
+        double[] yPreds = gbTrees.predict(dataXs);
+
+        Performance perf = Performance.build(dataYs, yPreds);
+        Assert.assertEquals(0.97, perf.getAucroc(), 1e-4);
     }
 
     @Test
