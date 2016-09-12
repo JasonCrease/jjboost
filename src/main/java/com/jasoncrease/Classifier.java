@@ -1,9 +1,12 @@
 package com.jasoncrease;
 
+import org.apache.log4j.Logger;
+
 /**
  * Created by jason on 12/09/2016.
  */
 public class Classifier {
+    private final static Logger LOGGER = Logger.getLogger(Classifier.class);
 
     private final int _categories;
     private final int _maxRounds;
@@ -38,11 +41,13 @@ public class Classifier {
                     .setTrainYs(_trainYs)
                     .build();
 
-        for(int round = 0; round < _maxRounds; round++)
-        {
-            for(int i=0; i < _categories; i++)
+        for (int round = 0; round < _maxRounds; round++) {
+            LOGGER.trace(String.format("Training round %d started", round));
+            for (int i = 0; i < _categories; i++)
                 treesGrowers[i].advanceOneRound();
         }
+
+        LOGGER.trace(String.format("Training round complete."));
     }
 
     public double[] predict(double[][] dataXs) {

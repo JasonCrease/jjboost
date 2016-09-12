@@ -77,16 +77,8 @@ public class TreesGrower {
         _numTrees = 1;
         for (int row = 0; row < _numRows; row++)
             _residualYs[row] = _trainYs[row] - _trees[0].predict(_transXs[row]);
-
-
-        if(_transTestXs == null)
-            LOGGER.trace(String.format("%d trees. Train error %.6f", _numTrees, rms(_residualYs)));
-        else
-        {
-            double[] yPreds = predict(_testXs);
-            LOGGER.trace(String.format("%d trees. Train error %.6f. Test error %.6f", _numTrees, rms(_residualYs), loss(yPreds, _testYs)));
-        }
     }
+
 
     public void advanceOneRound() {
 
@@ -119,19 +111,6 @@ public class TreesGrower {
         _trees[_numTrees] = bestTree;
         _treeWeights[_numTrees] = gamma * _shrinkage;
         _numTrees++;
-
-
-        if(_transTestXs == null)
-            LOGGER.trace(String.format("Trees %d. Train error %.6f", _numTrees, rms(_residualYs) / _numRows));
-        else
-        {
-            double[] yTrainPreds = predict(_trainXs);
-            double[] yTestPreds  = predict(_testXs);
-            LOGGER.trace(String.format("Trees %d. Train error %.6f. Test error %.6f",
-                    _numTrees,
-                    loss(yTrainPreds, _trainYs) / _numRows,
-                    loss(yTestPreds , _testYs) / _testXs[0].length ));
-        }
     }
 
     private double rms(double[] vals) {

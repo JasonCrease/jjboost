@@ -18,7 +18,7 @@ public class GbTreeTests {
         double[]   dataYs = DataSets.getRandomYs(200000);
 
         Classifier classifier = (new Classifier.ClassifierBuilder())
-                .setMaxRounds(50)
+                .setMaxRounds(5)
                 .setMaxTreeDepth(2)
                 .setTrainXs(dataXs)
                 .setTrainYs(dataYs)
