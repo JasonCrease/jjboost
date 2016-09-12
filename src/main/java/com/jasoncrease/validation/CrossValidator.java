@@ -1,9 +1,7 @@
 package com.jasoncrease.validation;
 
-import com.jasoncrease.GBTrees;
-import com.sun.xml.internal.ws.developer.MemberSubmissionAddressing;
+import com.jasoncrease.TreesGrower;
 
-import java.util.Arrays;
 import java.util.Random;
 
 /**
@@ -13,7 +11,7 @@ public class CrossValidator {
 
 
     private final int _folds;
-    private final GBTrees.GBTreesBuilder _gbBuilder;
+    private final TreesGrower.TreesGrowerBuilder _gbBuilder;
     private final double[][] _xs;
     private final double[] _ys;
 
@@ -35,17 +33,14 @@ public class CrossValidator {
     public void run() throws Exception {
         TestTrainSet[] testTrainSets = buildTestTrainSets();
 
-        GBTrees[] gbTrees = new GBTrees[_folds];
+        TreesGrower[] gbTrees = new TreesGrower[_folds];
         Performance[] perfs = new Performance[_folds];
 
         double totalAucRoc = 0f;
 
         for (int i = 0; i < _folds; i++) {
             gbTrees[i] = _gbBuilder.build();
-            gbTrees[i].train(testTrainSets[i].xsTrain,
-                    testTrainSets[i].ysTrain,
-                    testTrainSets[i].xsTest,
-                    testTrainSets[i].ysTest);
+            gbTrees[i].advanceOneRound();
 
             double[] yPreds = gbTrees[i].predict(testTrainSets[i].xsTest);
             perfs[i] = Performance.build(yPreds, testTrainSets[i].ysTest);
@@ -121,7 +116,7 @@ public class CrossValidator {
         private int _folds;
         private double[][] _xs;
         private double[] _ys;
-        private GBTrees.GBTreesBuilder _gbBuilder;
+        private TreesGrower.TreesGrowerBuilder _gbBuilder;
 
         public CrossValidatorBuilder setXs(double[][] xs)
         {
@@ -139,7 +134,7 @@ public class CrossValidator {
             this._folds = folds;
             return this;
         }
-        public CrossValidatorBuilder setTreeBuilder(GBTrees.GBTreesBuilder gbBuilder) {
+        public CrossValidatorBuilder setTreeBuilder(TreesGrower.TreesGrowerBuilder gbBuilder) {
             this._gbBuilder = gbBuilder;
             return this;
         }
