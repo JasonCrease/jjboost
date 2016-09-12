@@ -3,7 +3,14 @@ package com.jasoncrease;
 import org.apache.log4j.Logger;
 
 public class TreesGrower {
-    final static Logger LOGGER = Logger.getLogger(TreesGrower.class);
+    private final static Logger LOGGER = Logger.getLogger(TreesGrower.class);
+
+    private final double[][] _trainXs;
+    private final double[] _trainYs;
+    private final double[][] _testXs;
+    private final double[] _testYs;
+
+    private double[][] _transTestXs = null;
 
     // The number of decision trees grown so far
     int _numTrees = 0;
@@ -13,107 +20,117 @@ public class TreesGrower {
     int _maxDepth = 3;
     // How much to multiply gamma (tree weight) by
     double _shrinkage = 0.1;
-    //
+
     boolean showDebug = false;
 
-    TreeFinder _treeFinder;
-    TreeNode[] _trees;
-    double[] _treeWeights;
+    private TreeFinder _treeFinder;
+    private TreeNode[] _trees;
+    private double[] _treeWeights;
 
+    private double[] _residualYs;
+    private int _numRows;
+    private int _numFeatures;
+    private double[][] _transXs;
 
-    public TreesGrower(GBTreesBuilder gbTreesBuilder) {
-        _maxTrees = gbTreesBuilder._maxTrees;
-        _maxDepth = gbTreesBuilder._maxTreesDepth;
+    public TreesGrower(TreesGrowerBuilder treesGrowerBuilder) {
+        _maxTrees = treesGrowerBuilder._maxTrees;
+        _maxDepth = treesGrowerBuilder._maxTreesDepth;
+
+        _trainXs = treesGrowerBuilder._trainXs;
+        _trainYs = treesGrowerBuilder._trainYs;
+        _testXs = treesGrowerBuilder._testXs;
+        _testYs = treesGrowerBuilder._testYs;
 
         _treeFinder = new TreeFinder(new Splitter());
         _trees = new TreeNode[_maxTrees];
         _treeWeights = new double[_maxTrees];
+
+
+        if (_trainXs.length == 0)
+            throw new RuntimeException("There are no features");
+        if (_trainXs[0].length != _trainYs.length)
+            throw new RuntimeException("Should be the same number of training Ys as training Xs");
+
+        _numRows = _trainXs[0].length;
+        _numFeatures = _trainXs.length;
+        _residualYs = new double[_numRows];
     }
 
-    public void train(double[][] xs, double[] ys) throws Exception {
-        train(xs, ys, null, null);
-    }
 
-    public void train(double[][] xs, double[] ys, double[][] testXs, double[] testYs) throws Exception {
-        if (xs.length == 0)
-            throw new Exception("There are no features");
-        if (xs[0].length != ys.length)
-            throw new Exception("Should be the same number of Ys as Xs");
+    public void zerothRound()
+    {
+        LOGGER.info(String.format("Training on %d rows and %d features.", _numRows, _numFeatures));
+        if(_testXs != null)
+            LOGGER.info(String.format("Testing on %d rows and %d features.", _testXs[0].length, _testXs.length));
 
-        int numRows = xs[0].length;
-        int numFeatures = xs.length;
-
-        LOGGER.info(String.format("Training on %d rows and %d features.", numRows, numFeatures));
-        if(testXs != null)
-            LOGGER.info(String.format("Testing on %d rows and %d features.", testXs[0].length, testXs.length));
-
-        double[] residualYs = new double[numRows];
-        double[] resEffects = new double[numRows];
-        double[] predictions = new double[numRows];
-        double[][] transXs = transposeArray(xs); // The transpose if useful for some operations
-
-        double[][] transTestXs = null;
-        if(testXs != null)
-            transTestXs = transposeArray(testXs);
-
+        _transXs = transposeArray(_trainXs); // The transpose if useful for some operations
+        if(_testXs != null)
+            _transTestXs = transposeArray(_testXs);
 
         // Initialise residuals to the ys
-        for (int i = 0; i < numRows; i++)
-            residualYs[i] = ys[i];
+        for (int i = 0; i < _numRows; i++)
+            _residualYs[i] = _trainYs[i];
 
         // First tree is just the first best tree
-        _trees[0] = _treeFinder.getBestTree(xs, ys, _maxDepth);
+        _trees[0] = _treeFinder.getBestTree(_trainXs, _trainYs, _maxDepth);
         _treeWeights[0] = 1;
         _numTrees = 1;
-        for (int row = 0; row < numRows; row++)
-            residualYs[row] = ys[row] - _trees[0].predict(transXs[row]);
+        for (int row = 0; row < _numRows; row++)
+            _residualYs[row] = _trainYs[row] - _trees[0].predict(_transXs[row]);
 
 
-        if(transTestXs == null)
-            LOGGER.trace(String.format("%d trees. Train error %.6f", _numTrees, rms(residualYs)));
+        if(_transTestXs == null)
+            LOGGER.trace(String.format("%d trees. Train error %.6f", _numTrees, rms(_residualYs)));
         else
         {
-            double[] yPreds = predict(testXs);
-            LOGGER.trace(String.format("%d trees. Train error %.6f. Test error %.6f", _numTrees, rms(residualYs), loss(yPreds, testYs)));
+            double[] yPreds = predict(_testXs);
+            LOGGER.trace(String.format("%d trees. Train error %.6f. Test error %.6f", _numTrees, rms(_residualYs), loss(yPreds, _testYs)));
+        }
+    }
+
+    public void advanceOneRound() {
+
+        // For the 0th round, we grow the optimal tree aggressively and return.
+        if (_numTrees == 0) {
+            zerothRound();
+            return;
         }
 
+        TreeNode bestTree = _treeFinder.getBestTree(_trainXs, _residualYs, _maxDepth);
+
+        double[] resEffects  = new double[_numRows];
+        double[] predictions = new double[_numRows];
+
+        // Find best gamma by:
+        // 1. Build effects of bestTree on the residuals
+        for (int row = 0; row < _numRows; row++)
+            resEffects[row] = bestTree.predict(_transXs[row]);
+        // 2. Get all predictions
+        for (int row = 0; row < _numRows; row++)
+            predictions[row] = predict(_transXs[row]);
+        // 3. Do a linear search to get a gamma that best matches the residuals
+        //double gamma = getBestFactor(ys, predictions, resEffects);
+        double gamma = 1;
+
+        // Update residuals
+        for (int row = 0; row < _numRows; row++)
+            _residualYs[row] -= resEffects[row] * gamma * _shrinkage;
+
+        _trees[_numTrees] = bestTree;
+        _treeWeights[_numTrees] = gamma * _shrinkage;
+        _numTrees++;
 
 
-        // Build all further trees by finding diff and weighting
-        for (int treeNum = 1; treeNum < _maxTrees; treeNum++) {
-            TreeNode bestTree = _treeFinder.getBestTree(xs, residualYs, _maxDepth);
-
-            // Find best gamma by:
-            // 1. Build effects of bestTree on the residuals
-            for (int row = 0; row < numRows; row++)
-                resEffects[row] = bestTree.predict(transXs[row]);
-            // 2. Get all predictions
-            for (int row = 0; row < numRows; row++)
-                predictions[row] = predict(transXs[row]);
-            // 3. Do a linear search to get a gamma that best matches the residuals
-            //double gamma = getBestFactor(ys, predictions, resEffects);
-            double gamma = 1;
-
-            // Update residuals
-            for (int row = 0; row < numRows; row++)
-                residualYs[row] -= resEffects[row] * gamma * _shrinkage;
-
-            _trees[treeNum] = bestTree;
-            _treeWeights[treeNum] = gamma * _shrinkage;
-            _numTrees++;
-
-
-            if(transTestXs == null)
-                LOGGER.trace(String.format("Trees %d. Train error %.6f", _numTrees, rms(residualYs) / numRows));
-            else
-            {
-                double[] yTrainPreds = predict(xs);
-                double[] yTestPreds  = predict(testXs);
-                LOGGER.trace(String.format("Trees %d. Train error %.6f. Test error %.6f",
-                        _numTrees,
-                        loss(yTrainPreds, ys) / numRows,
-                        loss(yTestPreds , testYs) / testXs[0].length ));
-            }
+        if(_transTestXs == null)
+            LOGGER.trace(String.format("Trees %d. Train error %.6f", _numTrees, rms(_residualYs) / _numRows));
+        else
+        {
+            double[] yTrainPreds = predict(_trainXs);
+            double[] yTestPreds  = predict(_testXs);
+            LOGGER.trace(String.format("Trees %d. Train error %.6f. Test error %.6f",
+                    _numTrees,
+                    loss(yTrainPreds, _trainYs) / _numRows,
+                    loss(yTestPreds , _testYs) / _testXs[0].length ));
         }
     }
 
@@ -219,17 +236,40 @@ public class TreesGrower {
     }
 
 
-    public static class GBTreesBuilder {
-        int _maxTrees = 3;
-        private int _maxTreesDepth;
+    public static class TreesGrowerBuilder {
+        private int _maxTrees = 100;
+        private int _maxTreesDepth = 5;
+        private double[][] _trainXs;
+        private double[][] _testXs;
+        private double[] _trainYs;
+        private double[] _testYs;
 
-        public GBTreesBuilder setMaxTrees(int maxTrees)
+        public TreesGrowerBuilder setMaxTrees(int maxTrees)
         {
             _maxTrees = maxTrees;
             return this;
         }
-
-        public GBTreesBuilder setMaxTreeDepth(int maxTreeDepth) {
+        public TreesGrowerBuilder setTrainXs(double[][] trainXs)
+        {
+            _trainXs = trainXs;
+            return this;
+        }
+        public TreesGrowerBuilder setTestXs(double[][] testXs)
+        {
+            _testXs = testXs;
+            return this;
+        }
+        public TreesGrowerBuilder setTestYs(double[] testYs)
+        {
+            _testYs = testYs;
+            return this;
+        }
+        public TreesGrowerBuilder setTrainYs(double[] trainYs)
+        {
+            _trainYs = trainYs;
+            return this;
+        }
+        public TreesGrowerBuilder setMaxTreeDepth(int maxTreeDepth) {
             this._maxTreesDepth = maxTreeDepth;
             return this;
         }

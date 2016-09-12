@@ -1,3 +1,4 @@
+import com.jasoncrease.Classifier;
 import com.jasoncrease.TreesGrower;
 import com.jasoncrease.validation.Performance;
 import org.junit.Assert;
@@ -16,8 +17,13 @@ public class GbTreeTests {
         double[][] dataXs = DataSets.getRandomXs(10, 200000);
         double[]   dataYs = DataSets.getRandomYs(200000);
 
-        TreesGrower gbTrees = (new TreesGrower.GBTreesBuilder()).setMaxTrees(50).setMaxTreeDepth(2).build();
-        gbTrees.train(dataXs, dataYs);
+        Classifier classifier = (new Classifier.ClassifierBuilder())
+                .setMaxRounds(50)
+                .setMaxTreeDepth(2)
+                .setTrainXs(dataXs)
+                .setTrainYs(dataYs)
+                .build();
+        classifier.run();
     }
 
     @Test
@@ -25,9 +31,14 @@ public class GbTreeTests {
         double[][] dataXs = DataSets.getHousePriceData()._xs;
         double[]   dataYs = DataSets.getHousePriceData()._ys;
 
-        TreesGrower gbTrees = (new TreesGrower.GBTreesBuilder()).setMaxTrees(20).setMaxTreeDepth(3).build();
-        gbTrees.train(dataXs, dataYs);
-        double[] yPreds = gbTrees.predict(dataXs);
+        Classifier classifier = (new Classifier.ClassifierBuilder())
+                .setMaxRounds(20)
+                .setMaxTreeDepth(3)
+                .setTrainXs(dataXs)
+                .setTrainYs(dataYs)
+                .build();
+        classifier.run();
+        double[] yPreds = classifier.predict(dataXs);
 
         Performance perf = Performance.build(dataYs, yPreds);
         Assert.assertEquals(0.97, perf.getAucroc(), 1e-4);
@@ -38,8 +49,13 @@ public class GbTreeTests {
         double[][] dataXs = DataSets.getIrisData()._xs;
         double[]   dataYs = DataSets.getIrisData()._ys;
 
-        TreesGrower gbTrees = (new TreesGrower.GBTreesBuilder()).setMaxTrees(25).setMaxTreeDepth(3).build();
-        gbTrees.train(dataXs, dataYs);
+        Classifier classifier = (new Classifier.ClassifierBuilder())
+                .setMaxRounds(25)
+                .setMaxTreeDepth(3)
+                .setTrainXs(dataXs)
+                .setTrainYs(dataYs)
+                .build();
+        classifier.run();
     }
 
 }

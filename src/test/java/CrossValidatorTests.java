@@ -12,11 +12,11 @@ public class CrossValidatorTests {
         double[][] xs = DataSets.getHousePriceData()._xs;
         double[]   ys = DataSets.getHousePriceData()._ys;
 
-        TreesGrower.GBTreesBuilder gbTreesBuilder = new TreesGrower.GBTreesBuilder().setMaxTrees(550).setMaxTreeDepth(7);
+        TreesGrower.TreesGrowerBuilder treesGrowerBuilder = new TreesGrower.TreesGrowerBuilder().setMaxTrees(550).setMaxTreeDepth(7);
 
         CrossValidator.CrossValidatorBuilder crossValidatorBuilder = (new CrossValidator.CrossValidatorBuilder())
                 .setFolds(3)
-                .setTreeBuilder(gbTreesBuilder)
+                .setTreeBuilder(treesGrowerBuilder)
                 .setXs(xs)
                 .setYs(ys);
 
