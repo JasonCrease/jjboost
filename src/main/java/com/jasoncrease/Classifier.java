@@ -31,15 +31,23 @@ public class Classifier {
     {
         TreesGrower[] treesGrowers = new TreesGrower[_categories];
 
-        for(int i=0; i < _categories; i++)
-            treesGrowers[i] = new TreesGrower.TreesGrowerBuilder()
+        for(int cat =0; cat < _categories; cat ++)
+        {
+            double[] categoryYs = new double[_trainYs.length];
+
+            for(int row = 0; row < _trainYs.length; row++)
+                if(_trainYs[row] == cat)
+                    categoryYs[row] = 1;
+
+            treesGrowers[cat] = new TreesGrower.TreesGrowerBuilder()
                     .setMaxTreeDepth(_maxTreeDepth)
                     .setMaxTrees(_maxRounds)
                     .setTestXs(_testXs)
                     .setTestYs(_testYs)
                     .setTrainXs(_trainXs)
-                    .setTrainYs(_trainYs)
+                    .setTrainYs(categoryYs)
                     .build();
+        }
 
         for (int round = 0; round < _maxRounds; round++) {
             LOGGER.trace(String.format("Training round %d started", round));
