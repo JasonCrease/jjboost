@@ -2,8 +2,8 @@ package com.jasoncrease;
 
 import org.apache.log4j.Logger;
 
-public class RegressionTrees {
-    final static Logger LOGGER = Logger.getLogger(RegressionTrees.class);
+public class GBTrees {
+    final static Logger LOGGER = Logger.getLogger(GBTrees.class);
 
     // The number of decision trees grown so far
     int _numTrees = 0;
@@ -21,7 +21,7 @@ public class RegressionTrees {
     double[] _treeWeights;
 
 
-    public RegressionTrees(RegressionTreesBuilder gbTreesBuilder) {
+    public GBTrees(GBTreesBuilder gbTreesBuilder) {
         _maxTrees = gbTreesBuilder._maxTrees;
         _maxDepth = gbTreesBuilder._maxTreesDepth;
 
@@ -218,23 +218,24 @@ public class RegressionTrees {
         return array_new;
     }
 
-    public static class RegressionTreesBuilder {
+
+    public static class GBTreesBuilder {
         int _maxTrees = 3;
         private int _maxTreesDepth;
 
-        public RegressionTreesBuilder setMaxTrees(int maxTrees)
+        public GBTreesBuilder setMaxTrees(int maxTrees)
         {
             _maxTrees = maxTrees;
             return this;
         }
 
-        public RegressionTreesBuilder setMaxTreeDepth(int maxTreeDepth) {
+        public GBTreesBuilder setMaxTreeDepth(int maxTreeDepth) {
             this._maxTreesDepth = maxTreeDepth;
             return this;
         }
 
-        public RegressionTrees build() {
-            return new RegressionTrees(this);
+        public GBTrees build() {
+            return new GBTrees(this);
         }
     }
 }
