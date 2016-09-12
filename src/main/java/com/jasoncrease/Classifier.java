@@ -29,6 +29,25 @@ public class Classifier {
 
     public void run()
     {
+        if (_trainXs == null)
+            throw new RuntimeException("trainXs is null");
+        if (_trainYs == null)
+            throw new RuntimeException("trainXs is null");
+        if (_trainXs.length == 0)
+            throw new RuntimeException("There are no features");
+        if (_trainXs[0].length != _trainYs.length)
+            throw new RuntimeException("Should be the same number of training Ys as training Xs");
+        if (!(_testXs == null ^ _testYs == null))
+            throw new RuntimeException("Initialize both testXs and testYs, or neither");
+
+
+        LOGGER.info(String.format("Training classifier on %d rows and %d features. %d Categories",
+                _trainXs[0].length, _trainYs.length, _categories));
+        if(_testXs != null)
+            LOGGER.info(String.format("Testing on %d rows and %d features.",
+                    _testXs[0].length, _testXs.length));
+
+
         TreesGrower[] treesGrowers = new TreesGrower[_categories];
 
         for(int cat =0; cat < _categories; cat ++)

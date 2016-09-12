@@ -45,12 +45,6 @@ public class TreesGrower {
         _trees = new TreeNode[_maxTrees];
         _treeWeights = new double[_maxTrees];
 
-
-        if (_trainXs.length == 0)
-            throw new RuntimeException("There are no features");
-        if (_trainXs[0].length != _trainYs.length)
-            throw new RuntimeException("Should be the same number of training Ys as training Xs");
-
         _numRows = _trainXs[0].length;
         _numFeatures = _trainXs.length;
         _residualYs = new double[_numRows];
@@ -59,10 +53,6 @@ public class TreesGrower {
 
     public void zerothRound()
     {
-        LOGGER.info(String.format("Training on %d rows and %d features.", _numRows, _numFeatures));
-        if(_testXs != null)
-            LOGGER.info(String.format("Testing on %d rows and %d features.", _testXs[0].length, _testXs.length));
-
         _transXs = transposeArray(_trainXs); // The transpose if useful for some operations
         if(_testXs != null)
             _transTestXs = transposeArray(_testXs);
