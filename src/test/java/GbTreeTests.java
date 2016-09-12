@@ -1,4 +1,4 @@
-import com.jasoncrease.RegressionTrees;
+import com.jasoncrease.GBTrees;
 import com.jasoncrease.validation.Performance;
 import org.junit.Assert;
 import org.junit.Test;
@@ -16,7 +16,7 @@ public class GbTreeTests {
         double[][] dataXs = DataSets.getRandomXs(10, 200000);
         double[]   dataYs = DataSets.getRandomYs(200000);
 
-        RegressionTrees gbTrees = (new RegressionTrees.RegressionTreesBuilder()).setMaxTrees(50).setMaxTreeDepth(2).build();
+        GBTrees gbTrees = (new GBTrees.GBTreesBuilder()).setMaxTrees(50).setMaxTreeDepth(2).build();
         gbTrees.train(dataXs, dataYs);
     }
 
@@ -25,7 +25,7 @@ public class GbTreeTests {
         double[][] dataXs = DataSets.getHousePriceData()._xs;
         double[]   dataYs = DataSets.getHousePriceData()._ys;
 
-        RegressionTrees gbTrees = (new RegressionTrees.RegressionTreesBuilder()).setMaxTrees(20).setMaxTreeDepth(3).build();
+        GBTrees gbTrees = (new GBTrees.GBTreesBuilder()).setMaxTrees(20).setMaxTreeDepth(3).build();
         gbTrees.train(dataXs, dataYs);
         double[] yPreds = gbTrees.predict(dataXs);
 
@@ -38,7 +38,7 @@ public class GbTreeTests {
         double[][] dataXs = DataSets.getIrisData()._xs;
         double[]   dataYs = DataSets.getIrisData()._ys;
 
-        RegressionTrees gbTrees = (new RegressionTrees.RegressionTreesBuilder()).setMaxTrees(25).setMaxTreeDepth(3).build();
+        GBTrees gbTrees = (new GBTrees.GBTreesBuilder()).setMaxTrees(25).setMaxTreeDepth(3).build();
         gbTrees.train(dataXs, dataYs);
     }
 

@@ -1,4 +1,5 @@
-import com.jasoncrease.RegressionTrees;
+import com.jasoncrease.GBTrees;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class GetBestFactorTests {
@@ -19,7 +20,7 @@ public class GetBestFactorTests {
         double[] yds = { 0.4, 0.4, 0.4, 0.4, 0.4, 0.4 };
         double[]  ds = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
 
-        double bestFactor = RegressionTrees.getBestFactor(ys, yds, ds);
+        double bestFactor = GBTrees.getBestFactor(ys, yds, ds);
 
         AssertRoughlyTheSame(0.43, bestFactor);
     }
@@ -32,7 +33,7 @@ public class GetBestFactorTests {
         double[] yds = { 0.4, 0.4, 0.4, 0.4, 0.4, 0.4 };
         double[]  ds = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
 
-        double bestFactor = RegressionTrees.getBestFactor(ys, yds, ds);
+        double bestFactor = GBTrees.getBestFactor(ys, yds, ds);
 
         AssertRoughlyTheSame(-0.23, bestFactor);
     }
@@ -44,7 +45,7 @@ public class GetBestFactorTests {
         double[] yds = { 0.5, 0.3, 0.4, 0.5, 0.5, 0.2 };
         double[]  ds = { 0.6, 0.6, 0.7, 0.6, 0.7, 0.5 };
 
-        double bestFactor = RegressionTrees.getBestFactor(ys, yds, ds);
+        double bestFactor = GBTrees.getBestFactor(ys, yds, ds);
 
         AssertRoughlyTheSame(0.8, bestFactor);
     }
