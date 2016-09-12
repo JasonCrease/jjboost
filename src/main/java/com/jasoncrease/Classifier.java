@@ -15,6 +15,7 @@ public class Classifier {
     private final double[] _testYs;
     private final double[][] _trainXs;
     private final double[] _trainYs;
+    private TreesGrower[] _treesGrowers;
 
     public Classifier(ClassifierBuilder classifierBuilder)
     {
@@ -37,28 +38,30 @@ public class Classifier {
             throw new RuntimeException("There are no features");
         if (_trainXs[0].length != _trainYs.length)
             throw new RuntimeException("Should be the same number of training Ys as training Xs");
-        if (!(_testXs == null ^ _testYs == null))
+        if (_testXs == null ^ _testYs == null)
             throw new RuntimeException("Initialize both testXs and testYs, or neither");
 
 
         LOGGER.info(String.format("Training classifier on %d rows and %d features. %d Categories",
-                _trainXs[0].length, _trainYs.length, _categories));
+                _trainYs.length, _trainXs.length, _categories));
         if(_testXs != null)
             LOGGER.info(String.format("Testing on %d rows and %d features.",
                     _testXs[0].length, _testXs.length));
 
 
-        TreesGrower[] treesGrowers = new TreesGrower[_categories];
+        _treesGrowers = new TreesGrower[_categories];
 
-        for(int cat =0; cat < _categories; cat ++)
+        for(int cat = 0; cat < _categories; cat ++)
         {
             double[] categoryYs = new double[_trainYs.length];
 
             for(int row = 0; row < _trainYs.length; row++)
                 if(_trainYs[row] == cat)
-                    categoryYs[row] = 1;
+                    categoryYs[row] = Math.E;
+                else
+                    categoryYs[row] = 0;
 
-            treesGrowers[cat] = new TreesGrower.TreesGrowerBuilder()
+            _treesGrowers[cat] = new TreesGrower.TreesGrowerBuilder()
                     .setMaxTreeDepth(_maxTreeDepth)
                     .setMaxTrees(_maxRounds)
                     .setTestXs(_testXs)
@@ -71,14 +74,45 @@ public class Classifier {
         for (int round = 0; round < _maxRounds; round++) {
             LOGGER.trace(String.format("Training round %d started", round));
             for (int i = 0; i < _categories; i++)
-                treesGrowers[i].advanceOneRound();
+                _treesGrowers[i].advanceOneRound();
         }
 
         LOGGER.trace(String.format("Training round complete."));
     }
 
-    public double[] predict(double[][] dataXs) {
-        return new double[0];
+    public double[] predict(double[] xs) {
+        double[] rawPreds = new double[_categories];
+
+        for(int cat = 0; cat < _categories; cat++)
+            rawPreds[cat] = _treesGrowers[cat].predict(xs);
+
+        return softmax(rawPreds);
+    }
+
+    private double[] softmax(double[] vals) {
+        int valsLen = vals.length;
+
+        double[] as = new double[valsLen];
+        double b = 0;
+
+        for(int i =0; i < valsLen; i++)
+            b += Math.exp(vals[i]);
+
+        for(int i =0; i < valsLen; i++)
+            as[i] = Math.exp(vals[i]) / b;
+
+        return as;
+    }
+
+    public double[][] predict(double[][] xs) {
+        double[][] preds = new double[xs[0].length][_categories];
+
+        double[][] transXs = MathUtils.transposeArray(xs);
+
+        for (int i = 0; i < preds.length; i++)
+            preds[i] = predict(transXs[i]);
+
+        return preds;
     }
 
     public static class ClassifierBuilder
