@@ -1,9 +1,7 @@
 package com.jasoncrease.validation;
 
-import com.jasoncrease.GBTrees;
-import com.sun.xml.internal.ws.developer.MemberSubmissionAddressing;
+import com.jasoncrease.RegressionTrees;
 
-import java.util.Arrays;
 import java.util.Random;
 
 /**
@@ -13,7 +11,7 @@ public class CrossValidator {
 
 
     private final int _folds;
-    private final GBTrees.GBTreesBuilder _gbBuilder;
+    private final RegressionTrees.RegressionTreesBuilder _gbBuilder;
     private final double[][] _xs;
     private final double[] _ys;
 
@@ -35,7 +33,7 @@ public class CrossValidator {
     public void run() throws Exception {
         TestTrainSet[] testTrainSets = buildTestTrainSets();
 
-        GBTrees[] gbTrees = new GBTrees[_folds];
+        RegressionTrees[] gbTrees = new RegressionTrees[_folds];
         Performance[] perfs = new Performance[_folds];
 
         double totalAucRoc = 0f;
@@ -121,7 +119,7 @@ public class CrossValidator {
         private int _folds;
         private double[][] _xs;
         private double[] _ys;
-        private GBTrees.GBTreesBuilder _gbBuilder;
+        private RegressionTrees.RegressionTreesBuilder _gbBuilder;
 
         public CrossValidatorBuilder setXs(double[][] xs)
         {
@@ -139,7 +137,7 @@ public class CrossValidator {
             this._folds = folds;
             return this;
         }
-        public CrossValidatorBuilder setTreeBuilder(GBTrees.GBTreesBuilder gbBuilder) {
+        public CrossValidatorBuilder setTreeBuilder(RegressionTrees.RegressionTreesBuilder gbBuilder) {
             this._gbBuilder = gbBuilder;
             return this;
         }
