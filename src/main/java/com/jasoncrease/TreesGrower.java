@@ -53,9 +53,9 @@ public class TreesGrower {
 
     public void zerothRound()
     {
-        _transXs = transposeArray(_trainXs); // The transpose if useful for some operations
+        _transXs = MathUtils.transposeArray(_trainXs); // The transpose if useful for some operations
         if(_testXs != null)
-            _transTestXs = transposeArray(_testXs);
+            _transTestXs = MathUtils.transposeArray(_testXs);
 
         // Initialise residuals to the ys
         for (int i = 0; i < _numRows; i++)
@@ -189,20 +189,6 @@ public class TreesGrower {
         return prediction;
     }
 
-    // http://stackoverflow.com/questions/8422374/java-multi-dimensional-array-transposing
-    private double[][] transposeArray(double[][] arr) {
-        int width = arr.length;
-        int height = arr[0].length;
-
-        double[][] array_new = new double[height][width];
-
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                array_new[y][x] = arr[x][y];
-            }
-        }
-        return array_new;
-    }
 
 
     public static class TreesGrowerBuilder {
