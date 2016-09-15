@@ -19,5 +19,25 @@ public class MathUtils {
         }
         return array_new;
     }
+    private static double logloss(double y1, double y2) {
+        if (y2 >= 1 - 1e-15)
+            y2 = 1 - 1e-15;
+        if (y2 < 1e-15)
+            y2 = 1e-15;
+        if (y1 >= 1 - 1e-15)
+            y1 = 1 - 1e-15;
+        if (y1 < 1e-15)
+            y1 = 1e-15;
 
+        return y1 * Math.log(y2) +
+                (1 - y1) * Math.log(1 - y2);
+    }
+
+
+    public static double logLoss(double[] yActual, double[] yPredicated) {
+        double totalLoss = 0f;
+        for (int i = 0; i < yActual.length; i++)
+            totalLoss += logloss(yActual[i], yPredicated[i]);
+        return -totalLoss;
+    }
 }

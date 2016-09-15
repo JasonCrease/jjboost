@@ -3,6 +3,7 @@ package com.jasoncrease.validation;
 import com.jasoncrease.Classifier;
 import com.jasoncrease.MathUtils;
 import com.jasoncrease.TreesGrower;
+import org.apache.log4j.Logger;
 
 import java.util.Random;
 
@@ -11,6 +12,7 @@ import java.util.Random;
  */
 public class CrossValidator {
 
+    private final static Logger LOGGER = Logger.getLogger(Classifier.class);
 
     private final int _folds;
     private final Classifier.ClassifierBuilder _cfBuilder;
@@ -51,14 +53,19 @@ public class CrossValidator {
 
             for (int round = 0; round < _cfBuilder.getMaxRounds(); round++) {
                 classifiers[i].advanceOneRound();
+                double[] yTrainPreds = MathUtils.transposeArray(classifiers[i].predict(testTrainSets[i].xsTrain))[0];
+                double[] yTestPreds = MathUtils.transposeArray(classifiers[i].predict(testTrainSets[i].xsTest))[0];
+                LOGGER.trace("Train error: " + MathUtils.logLoss(testTrainSets[i].ysTrain, yTrainPreds));
+                LOGGER.trace("Test error:  " + MathUtils.logLoss(testTrainSets[i].ysTest, yTestPreds));
             }
 
             double[] yPreds = MathUtils.transposeArray(classifiers[i].predict(testTrainSets[i].xsTest))[0];
-            perfs[i] = Performance.build(yPreds, testTrainSets[i].ysTest);
-            totalAucRoc += perfs[i].getAucroc();
+            perfs[i] = Performance.build(testTrainSets[i].ysTest, yPreds);
+            double aucRoc = perfs[i].getAucroc();
+            totalAucRoc += aucRoc;
         }
 
-        totalAucRoc /= _folds;
+        double rocTot = totalAucRoc / _folds;
     }
 
     private TestTrainSet[] buildTestTrainSets() {

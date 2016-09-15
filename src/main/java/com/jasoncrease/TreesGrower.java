@@ -1,6 +1,7 @@
 package com.jasoncrease;
 
 import org.apache.log4j.Logger;
+import sun.nio.cs.ext.MacHebrew;
 
 public class TreesGrower {
     private final static Logger LOGGER = Logger.getLogger(TreesGrower.class);
@@ -19,7 +20,7 @@ public class TreesGrower {
     // The maximum permitted depth of tree
     int _maxDepth = 3;
     // How much to multiply gamma (tree weight) by
-    double _shrinkage = 0.3;
+    double _shrinkage = 0.5;
 
     boolean showDebug = false;
 
@@ -57,7 +58,7 @@ public class TreesGrower {
     // First derivative wrt y2
     public double dlDy(double y1, double y2)
     {
-        return y2 - y1;
+        return y1 - y2;
     }
 
     public void advanceOneRound() {
@@ -102,7 +103,7 @@ public class TreesGrower {
             for (int i = 0; i < yds.length; i++)
                 currentYds[i] = yds[i] + (K * fs[i]);
 
-            double loss = loss(ys, currentYds);
+            double loss = MathUtils.logLoss(ys, currentYds);
 
             if (loss < bestLoss) {
                 bestK = K;
@@ -113,27 +114,7 @@ public class TreesGrower {
         return bestK;
     }
 
-    private static double logloss(double y1, double y2) {
-        if (y2 >= 1 - 1e-15)
-            y2 = 1 - 1e-15;
-        if (y2 < 1e-15)
-            y2 = 1e-15;
-        if (y1 >= 1 - 1e-15)
-            y1 = 1 - 1e-15;
-        if (y1 < 1e-15)
-            y1 = 1e-15;
 
-        return y1 * Math.log(y2) +
-                (1 - y1) * Math.log(1 - y2);
-    }
-
-    private static double loss(double[] y1, double[] y2) {
-        double totalLoss = 0f;
-        for (int i = 0; i < y1.length; i++)
-            //totalLoss += -squaredloss(y1[i], y2[i]);
-            totalLoss += logloss(y1[i], y2[i]);
-        return -totalLoss;
-    }
 
     private static double squaredloss(double v1, double v2) {
         return (v1 - v2) * (v1 - v2);
