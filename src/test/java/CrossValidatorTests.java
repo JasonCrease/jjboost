@@ -1,3 +1,4 @@
+import com.jasoncrease.Classifier;
 import com.jasoncrease.TreesGrower;
 import com.jasoncrease.validation.CrossValidator;
 import org.junit.Test;
@@ -12,11 +13,13 @@ public class CrossValidatorTests {
         double[][] xs = DataSets.getHousePriceData()._xs;
         double[]   ys = DataSets.getHousePriceData()._ys;
 
-        TreesGrower.TreesGrowerBuilder treesGrowerBuilder = new TreesGrower.TreesGrowerBuilder().setMaxTrees(550).setMaxTreeDepth(7);
+       Classifier.ClassifierBuilder classifierBuilder = new Classifier.ClassifierBuilder()
+               .setMaxRounds(50)
+               .setMaxTreeDepth(7);
 
         CrossValidator.CrossValidatorBuilder crossValidatorBuilder = (new CrossValidator.CrossValidatorBuilder())
                 .setFolds(3)
-                .setTreeBuilder(treesGrowerBuilder)
+                .setClassifier(classifierBuilder)
                 .setXs(xs)
                 .setYs(ys);
 

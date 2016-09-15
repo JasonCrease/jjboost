@@ -19,7 +19,7 @@ public class TreesGrower {
     // The maximum permitted depth of tree
     int _maxDepth = 3;
     // How much to multiply gamma (tree weight) by
-    double _shrinkage = 0.1;
+    double _shrinkage = 0.3;
 
     boolean showDebug = false;
 
@@ -27,7 +27,7 @@ public class TreesGrower {
     private TreeNode[] _trees;
     private double[] _treeWeights;
 
-    private double[] _residualYs;
+    private double[][] _residualYs;
     private int _numRows;
     private int _numFeatures;
     private double[][] _transXs;
@@ -35,6 +35,7 @@ public class TreesGrower {
     public TreesGrower(TreesGrowerBuilder treesGrowerBuilder) {
         _maxTrees = treesGrowerBuilder._maxTrees;
         _maxDepth = treesGrowerBuilder._maxTreesDepth;
+        _shrinkage = treesGrowerBuilder._shrinkage;
 
         _trainXs = treesGrowerBuilder._trainXs;
         _trainYs = treesGrowerBuilder._trainYs;
@@ -47,56 +48,33 @@ public class TreesGrower {
 
         _numRows = _trainXs[0].length;
         _numFeatures = _trainXs.length;
-        _residualYs = new double[_numRows];
-    }
 
-
-    public void zerothRound()
-    {
         _transXs = MathUtils.transposeArray(_trainXs); // The transpose if useful for some operations
         if(_testXs != null)
             _transTestXs = MathUtils.transposeArray(_testXs);
-
-        // Initialise residuals to the ys
-        for (int i = 0; i < _numRows; i++)
-            _residualYs[i] = _trainYs[i];
-
-        // First tree is just the first best tree
-        _trees[0] = _treeFinder.getBestTree(_trainXs, _trainYs, _maxDepth);
-        _treeWeights[0] = 1;
-        _numTrees = 1;
-        for (int row = 0; row < _numRows; row++)
-            _residualYs[row] = _trainYs[row] - _trees[0].predict(_transXs[row]);
     }
 
+    // First derivative wrt y2
+    public double dlDy(double y1, double y2)
+    {
+        return y2 - y1;
+    }
 
     public void advanceOneRound() {
 
-        // For the 0th round, we grow the optimal tree aggressively and return.
-        if (_numTrees == 0) {
-            zerothRound();
-            return;
-        }
-
-        TreeNode bestTree = _treeFinder.getBestTree(_trainXs, _residualYs, _maxDepth);
-
+        double[] objective = new double[_numRows];
         double[] resEffects  = new double[_numRows];
         double[] predictions = new double[_numRows];
 
-        // Find best gamma by:
-        // 1. Build effects of bestTree on the residuals
-        for (int row = 0; row < _numRows; row++)
-            resEffects[row] = bestTree.predict(_transXs[row]);
-        // 2. Get all predictions
-        for (int row = 0; row < _numRows; row++)
-            predictions[row] = predict(_transXs[row]);
-        // 3. Do a linear search to get a gamma that best matches the residuals
-        //double gamma = getBestFactor(ys, predictions, resEffects);
-        double gamma = 1;
+        for (int row = 0; row < _numRows; row++) {
+            if(_numTrees > 0)
+                predictions[row] = predict(_transXs[row]);
+            objective[row] = dlDy(_trainYs[row], predictions[row]);
+        }
 
-        // Update residuals
-        for (int row = 0; row < _numRows; row++)
-            _residualYs[row] -= resEffects[row] * gamma * _shrinkage;
+        TreeNode bestTree = _treeFinder.getBestTree(_trainXs, objective, _maxDepth);
+
+        double gamma = 1;
 
         _trees[_numTrees] = bestTree;
         _treeWeights[_numTrees] = gamma * _shrinkage;
@@ -186,9 +164,13 @@ public class TreesGrower {
         for (int i = 0; i < _numTrees; i++)
             prediction += _trees[i].predict(vector) * _treeWeights[i];
 
-        return prediction;
+        return logistic(prediction);
     }
 
+    public double logistic(double x)
+    {
+        return 1 / (1 + Math.exp(-x));
+    }
 
 
     public static class TreesGrowerBuilder {
@@ -198,6 +180,7 @@ public class TreesGrower {
         private double[][] _testXs;
         private double[] _trainYs;
         private double[] _testYs;
+        private double _shrinkage;
 
         public TreesGrowerBuilder setMaxTrees(int maxTrees)
         {
@@ -229,8 +212,14 @@ public class TreesGrower {
             return this;
         }
 
+        public TreesGrowerBuilder setShrinkage(double shrinkage) {
+            this._shrinkage = shrinkage;
+            return this;
+        }
+
         public TreesGrower build() {
             return new TreesGrower(this);
         }
+
     }
 }

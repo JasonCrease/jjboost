@@ -1,5 +1,7 @@
 package com.jasoncrease.validation;
 
+import com.jasoncrease.Classifier;
+import com.jasoncrease.MathUtils;
 import com.jasoncrease.TreesGrower;
 
 import java.util.Random;
@@ -11,13 +13,13 @@ public class CrossValidator {
 
 
     private final int _folds;
-    private final TreesGrower.TreesGrowerBuilder _gbBuilder;
+    private final Classifier.ClassifierBuilder _cfBuilder;
     private final double[][] _xs;
     private final double[] _ys;
 
     private CrossValidator(CrossValidatorBuilder crossValidatorBuilder) {
         _folds = crossValidatorBuilder._folds;
-        _gbBuilder = crossValidatorBuilder._gbBuilder;
+        _cfBuilder = crossValidatorBuilder._cfBuilder;
         _xs = crossValidatorBuilder._xs;
         _ys = crossValidatorBuilder._ys;
     }
@@ -33,16 +35,25 @@ public class CrossValidator {
     public void run() throws Exception {
         TestTrainSet[] testTrainSets = buildTestTrainSets();
 
-        TreesGrower[] gbTrees = new TreesGrower[_folds];
+        Classifier[] classifiers = new Classifier[_folds];
         Performance[] perfs = new Performance[_folds];
 
         double totalAucRoc = 0f;
 
         for (int i = 0; i < _folds; i++) {
-            gbTrees[i] = _gbBuilder.build();
-            gbTrees[i].advanceOneRound();
+            classifiers[i] = _cfBuilder
+                    .setTestYs(testTrainSets[i].ysTest)
+                    .setTestXs(testTrainSets[i].xsTest)
+                    .setTrainYs(testTrainSets[i].ysTrain)
+                    .setTrainXs(testTrainSets[i].xsTrain)
+                    .build();
+            classifiers[i].setup();
 
-            double[] yPreds = gbTrees[i].predict(testTrainSets[i].xsTest);
+            for (int round = 0; round < _cfBuilder.getMaxRounds(); round++) {
+                classifiers[i].advanceOneRound();
+            }
+
+            double[] yPreds = MathUtils.transposeArray(classifiers[i].predict(testTrainSets[i].xsTest))[0];
             perfs[i] = Performance.build(yPreds, testTrainSets[i].ysTest);
             totalAucRoc += perfs[i].getAucroc();
         }
@@ -116,10 +127,9 @@ public class CrossValidator {
         private int _folds;
         private double[][] _xs;
         private double[] _ys;
-        private TreesGrower.TreesGrowerBuilder _gbBuilder;
+        private Classifier.ClassifierBuilder _cfBuilder;
 
-        public CrossValidatorBuilder setXs(double[][] xs)
-        {
+        public CrossValidatorBuilder setXs(double[][] xs) {
             _xs = xs;
             return this;
         }
@@ -134,8 +144,8 @@ public class CrossValidator {
             this._folds = folds;
             return this;
         }
-        public CrossValidatorBuilder setTreeBuilder(TreesGrower.TreesGrowerBuilder gbBuilder) {
-            this._gbBuilder = gbBuilder;
+        public CrossValidatorBuilder setClassifier(Classifier.ClassifierBuilder cfBuilder) {
+            this._cfBuilder = cfBuilder;
             return this;
         }
 

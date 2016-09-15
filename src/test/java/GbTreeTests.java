@@ -1,4 +1,5 @@
 import com.jasoncrease.Classifier;
+import com.jasoncrease.MathUtils;
 import com.jasoncrease.TreesGrower;
 import com.jasoncrease.validation.Performance;
 import org.junit.Assert;
@@ -32,19 +33,21 @@ public class GbTreeTests {
         double[]   dataYs = DataSets.getHousePriceData()._ys;
 
         Classifier classifier = (new Classifier.ClassifierBuilder())
-                .setMaxRounds(40)
-                .setMaxTreeDepth(6)
+                .setMaxRounds(1)
+                .setMaxTreeDepth(8)
+                .setShrinkage(0.2)
                 .setTrainXs(dataXs)
                 .setTrainYs(dataYs)
                 .build();
         classifier.run();
+
         double[][] yPreds = classifier.predict(dataXs);
 
-        //Performance perf = Performance.build(dataYs, yPreds[0]);
-        //Assert.assertEquals(0.97, perf.getAucroc(), 1e-4);
+        Performance perf = Performance.build(dataYs, MathUtils.transposeArray(yPreds)[0]);
+        Assert.assertEquals(0.97, perf.getAucroc(), 1e-4);
 
         for (int i = 0; i < 100; i++)
-            System.out.println(yPreds[i][0] + "," + yPreds[i][1] + "  ");
+            System.out.println(yPreds[i][0]);
     }
 
     @Test

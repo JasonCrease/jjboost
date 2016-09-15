@@ -16,6 +16,7 @@ public class Classifier {
     private final double[][] _trainXs;
     private final double[] _trainYs;
     private TreesGrower[] _treesGrowers;
+    private double _shrinkage;
 
     public Classifier(ClassifierBuilder classifierBuilder)
     {
@@ -26,10 +27,23 @@ public class Classifier {
         _testYs = classifierBuilder._testYs;
         _trainXs = classifierBuilder._trainXs;
         _trainYs = classifierBuilder._trainYs;
+        _shrinkage = classifierBuilder._shrinkage;
     }
 
     public void run()
     {
+        setup();
+
+        for (int round = 0; round < _maxRounds; round++) {
+            LOGGER.trace(String.format("Training round %d started", round));
+            for (int i = 0; i < _categories; i++)
+                _treesGrowers[i].advanceOneRound();
+        }
+
+        LOGGER.trace(String.format("Training round complete."));
+    }
+
+    public void setup() {
         if (_trainXs == null)
             throw new RuntimeException("trainXs is null");
         if (_trainYs == null)
@@ -57,7 +71,7 @@ public class Classifier {
 
             for(int row = 0; row < _trainYs.length; row++)
                 if(_trainYs[row] == cat)
-                    categoryYs[row] = Math.E;
+                    categoryYs[row] = 1;
                 else
                     categoryYs[row] = 0;
 
@@ -68,16 +82,15 @@ public class Classifier {
                     .setTestYs(_testYs)
                     .setTrainXs(_trainXs)
                     .setTrainYs(categoryYs)
+                    .setShrinkage(_shrinkage)
                     .build();
         }
+    }
 
-        for (int round = 0; round < _maxRounds; round++) {
-            LOGGER.trace(String.format("Training round %d started", round));
-            for (int i = 0; i < _categories; i++)
-                _treesGrowers[i].advanceOneRound();
-        }
-
-        LOGGER.trace(String.format("Training round complete."));
+    public void advanceOneRound()
+    {
+        for (int i = 0; i < _categories; i++)
+            _treesGrowers[i].advanceOneRound();
     }
 
     public double[] predict(double[] xs) {
@@ -86,7 +99,7 @@ public class Classifier {
         for(int cat = 0; cat < _categories; cat++)
             rawPreds[cat] = _treesGrowers[cat].predict(xs);
 
-        return softmax(rawPreds);
+        return rawPreds;
     }
 
     private double[] softmax(double[] vals) {
@@ -95,10 +108,10 @@ public class Classifier {
         double[] as = new double[valsLen];
         double b = 0;
 
-        for(int i =0; i < valsLen; i++)
+        for (int i = 0; i < valsLen; i++)
             b += Math.exp(vals[i]);
 
-        for(int i =0; i < valsLen; i++)
+        for (int i = 0; i < valsLen; i++)
             as[i] = Math.exp(vals[i]) / b;
 
         return as;
@@ -117,22 +130,27 @@ public class Classifier {
 
     public static class ClassifierBuilder
     {
-        private int _categories = 2;
+        private int _categories = 1;
         private int _maxRounds = 50;
-        private int _maxTreesDepth = 5;
+        private int _maxTreeDepth = 6;
+        private double _shrinkage = 0.3;
         private double[][] _trainXs;
         private double[][] _testXs;
         private double[] _trainYs;
         private double[] _testYs;
-        private int _maxTreeDepth;
 
         /**
-         * Number of categories. Note that a binary classifier has 2 categories. Your data should be categorized
+         * Number of categories. Note that a binary classifier has 1 categories. Your data should be categorized
          * as 0, 1, 2, 3... 12, 13, 14. That example has 15 categories.
          */
         public ClassifierBuilder setCategories(int categories)
         {
             _categories = categories;
+            return this;
+        }
+        public ClassifierBuilder setShrinkage(double shrinkage)
+        {
+            _shrinkage = shrinkage;
             return this;
         }
         public ClassifierBuilder setTrainXs(double[][] trainXs)
@@ -169,5 +187,8 @@ public class Classifier {
             return new Classifier(this);
         }
 
+        public int getMaxRounds() {
+            return _maxRounds;
+        }
     }
 }
